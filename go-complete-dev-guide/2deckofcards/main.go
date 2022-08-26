@@ -3,6 +3,6 @@ package main
 func main() {
 	cards := newDeck()
 	cards.saveToFile("my_cards.txt")
-	cards2 := newDeckFromFile("my_cards.txt")
-	cards2.print()
+	cards.shuffle()
+	cards.print()
 }
