@@ -15,21 +15,21 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snippets, err := app.snippets.Latest()
+	// snippets, err := app.snippets.Latest()
 
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// 	return
+	// }
 
-	for _, snippet := range snippets {
-		fmt.Fprintf(w, "%+v\n", snippet)
-	}
+	// for _, snippet := range snippets {
+	// 	fmt.Fprintf(w, "%+v\n", snippet)
+	// }
 
 	// The file containing the base template must be first
 	// in the string slice
 	files := []string{
-		"./ui/html/pages/base.tmpl",
+		"./ui/html/base.tmpl",
 		"./ui/html/pages/nav.tmpl",
 		"./ui/html/pages/home.tmpl",
 	}
@@ -72,6 +72,27 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 
 		return
+	}
+
+	// Initialize a slice containing the paths to the view.tmpl file,
+	// plus the base layout and navigation partial that we made earlier.
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/partials/nav.tmpl",
+		"./ui/html/pages/view.tmpl",
+	}
+
+	// Parse the template files
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+	// And then execute them. Notice how we are passing in the snippet
+	// data (a models.Snippet struct) as the final parameter
+	err = ts.ExecuteTemplate(w, "base", snippet)
+	if err != nil {
+		app.serverError(w, err)
 	}
 
 	fmt.Fprintf(w, "%+v", snippet)
