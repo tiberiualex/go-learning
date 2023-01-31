@@ -9,6 +9,9 @@ import (
 
 	"tiberiualex-golearning-snippetbox/internal/models"
 
+	// we're not using anything from the package, but we need its init() function
+	// to register itself with the database/sql package, so we alias it to the blank identifier
+	// so the compiler won't complain about unused imports
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -22,7 +25,7 @@ func main() {
 	// Define a new command line flag, with a default value of ":4000"
 	addr := flag.String("addr", ":4000", "HTTP network address")
 
-	// Define a new command-line flag for the MySQL DSN string.
+	// Define a new command-line flag for the MySQL DSN (Data Source Name: connection string) string.
 	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 
 	// This must be called to parse the flags. If you read addr before
@@ -80,7 +83,7 @@ func main() {
 }
 
 // The openDB() function wraps sql.Open() and returns a sql.DB connection pool
-// for a given DSN
+// for a given DSN (Data Source Name: connection string)
 func openDB(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("mysql", dsn)
 

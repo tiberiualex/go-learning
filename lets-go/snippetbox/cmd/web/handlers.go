@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"text/template"
@@ -88,14 +87,17 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 	}
 
+	// Create an instance of templateData struct holding the snippet data
+	data := &templateData{
+		Snippet: snippet,
+	}
+
 	// And then execute them. Notice how we are passing in the snippet
-	// data (a models.Snippet struct) as the final parameter
-	err = ts.ExecuteTemplate(w, "base", snippet)
+	// data (a templateData struct) as the final parameter
+	err = ts.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		app.serverError(w, err)
 	}
-
-	fmt.Fprintf(w, "%+v", snippet)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
