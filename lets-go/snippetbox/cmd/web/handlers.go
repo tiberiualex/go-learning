@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"text/template"
 	"tiberiualex-golearning-snippetbox/internal/models"
 )
 
@@ -14,41 +13,20 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// snippets, err := app.snippets.Latest()
-
-	// if err != nil {
-	// 	app.serverError(w, err)
-	// 	return
-	// }
-
-	// for _, snippet := range snippets {
-	// 	fmt.Fprintf(w, "%+v\n", snippet)
-	// }
-
-	// The file containing the base template must be first
-	// in the string slice
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/pages/nav.tmpl",
-		"./ui/html/pages/home.tmpl",
-	}
-
-	// Read template files and put them in a template set
-	// ooo spread operators
-	ts, err := template.ParseFiles(files...)
-
+	snippets, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	// Use the ExecuteTemplate() method to write the content of the "base"
-	// template as the response body
-	err = ts.ExecuteTemplate(w, "base", nil)
+	// Call the newTemplateData() helper to get a templateData struct containing
+	// the 'default' data (which for now is just the current year), and add the
+	// snippets slice to it
+	data := app.newTemplateData(r)
+	data.Snippets = snippets
 
-	if err != nil {
-		app.serverError(w, err)
-	}
+	// Pass the data to the render() helper as normal
+	app.render(w, http.StatusOK, "home.tmpl", data)
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
@@ -73,31 +51,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize a slice containing the paths to the view.tmpl file,
-	// plus the base layout and navigation partial that we made earlier.
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/partials/nav.tmpl",
-		"./ui/html/pages/view.tmpl",
-	}
+	data := app.newTemplateData(r)
+	data.Snippet = snippet
 
-	// Parse the template files
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-	}
-
-	// Create an instance of templateData struct holding the snippet data
-	data := &templateData{
-		Snippet: snippet,
-	}
-
-	// And then execute them. Notice how we are passing in the snippet
-	// data (a templateData struct) as the final parameter
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	app.render(w, http.StatusOK, "view.tmpl", data)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
