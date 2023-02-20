@@ -18,6 +18,7 @@ type templateData struct {
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
 	Form        any
+	Flash       string
 }
 
 // Create a humanData function which returns a nicely formatted string

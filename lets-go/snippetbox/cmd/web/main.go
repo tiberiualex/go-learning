@@ -7,8 +7,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"tiberiualex-golearning-snippetbox/internal/models"
+
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 
 	// we're not using anything from the package, but we need its init() function
 	// to register itself with the database/sql package, so we alias it to the blank identifier
@@ -16,11 +20,14 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// go run ./cmd/web
+
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	snippets      *models.SnippetModel
-	templateCache map[string]*template.Template
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	snippets       *models.SnippetModel
+	templateCache  map[string]*template.Template
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -65,13 +72,22 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	// Use the scs.New() function to initialize a new session manager. Then we
+	// configure it to use our MySQL database as the session store, and set a
+	// lifetime of 12 hours (so that the sessions automatically expire 12 hours
+	// after first being created).
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	// initialize a new instance of our application struct, containing
 	// the dependencies
 	app := &application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: templateCache,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		sessionManager: sessionManager,
 	}
 
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
