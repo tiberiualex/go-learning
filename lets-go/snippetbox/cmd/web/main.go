@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -95,6 +96,14 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
+	// Initialize a tls.Config struct to hold the non-default TLS settings we
+	// want the server to use. In this case, the only thing that we're changing
+	// is the curve preferences value, so that only the elliptic curves with
+	// assembly implementations are used.
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
 	// that the serer uses the same network address and routes as before, and set
 	// the ErrorLog field so that the server now uses the custom errorLog logger in
@@ -103,6 +112,23 @@ func main() {
 		Addr:     *addr,
 		ErrorLog: errorLog,
 		Handler:  app.routes(),
+		// Set the server's TLS config
+		TLSConfig: tlsConfig,
+		// Add Idle, Read and Write timeouts to the server
+		// By default, Go enables keep-alives on all accepted connections, this helps
+		// reduce latency (especially for HTTPS) because a client can reuse the same
+		// connection for multiple requests without having to repeat the handshake.
+		// By default, keep-alive connections will be automatically closed after a
+		// couple of minutes. There's no way to increase this default with the default
+		// go net.Listener, but you can reduce it via the IddleTimeout setting. In our
+		// case, all keep-alives will be closed after 1 minute of inactivity
+		IdleTimeout: time.Minute,
+		// Setting this can avoid slow-client attacks. After the timeout, Go will close the
+		// underlying connection, so the user wont' receive any HTTP(S) response
+		// Also, if you set this, but not IdleTimeout, IddleTimeout will default to the
+		// same setting as ReadTimeout, so make sure to set IdleTimeout explicitly
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	// Write messages using the two new loggers, instead of the standard logger
