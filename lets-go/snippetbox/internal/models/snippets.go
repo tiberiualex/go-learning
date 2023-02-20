@@ -26,7 +26,6 @@ type SnippetModel struct {
 func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {
 	// Write the SQL statement we want to execute. Split into 2 lines for
 	// readability, which is why it's surrounded with backticks.
-
 	stmt := `INSERT INTO snippets (title, content, created, expires)
 	VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`
 
@@ -77,7 +76,6 @@ func (m *SnippetModel) Get(id int) (*Snippet, error) {
 		// sql.ErrNoRows error. We use the errors.Is() function check for that
 		// error specifically, and return our own ErrNoRecord error
 		// instead (we'll create this in a moment)
-
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
 		} else {
