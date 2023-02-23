@@ -32,7 +32,8 @@ func (app *application) routes() http.Handler {
 	// Create a new middleware chain containing the middleware specific to our
 	// dynamic application routes. For now, this chain will only contain the
 	// LoadAndSave session middleware but we'll add more to it later.
-	dynamic := alice.New(app.sessionManager.LoadAndSave)
+	// Also use the nosurf middleware for CSRF protection
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
 
 	// Re-create the routes using the appropriate methods, patterns and handlers
 	// Then update these routes to use the new dynamic middleware chain followed by

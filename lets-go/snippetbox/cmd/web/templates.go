@@ -20,6 +20,9 @@ type templateData struct {
 	Form            any
 	Flash           string
 	IsAuthenticated bool
+	// We need the nosurf.Token() function to get the CSRF token, then add it to a hidden field
+	// so our forms will still work
+	CSRFToken string
 }
 
 // Create a humanData function which returns a nicely formatted string
