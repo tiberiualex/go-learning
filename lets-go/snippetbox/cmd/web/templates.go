@@ -14,11 +14,12 @@ import (
 // in one and only one item of dynamic data when rendering a template.
 // So we're creating a struct to hold all the data in different fields
 type templateData struct {
-	CurrentYear int
-	Snippet     *models.Snippet
-	Snippets    []*models.Snippet
-	Form        any
-	Flash       string
+	CurrentYear     int
+	Snippet         *models.Snippet
+	Snippets        []*models.Snippet
+	Form            any
+	Flash           string
+	IsAuthenticated bool
 }
 
 // Create a humanData function which returns a nicely formatted string
