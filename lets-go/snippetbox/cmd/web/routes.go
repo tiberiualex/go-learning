@@ -70,6 +70,8 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.snippetCreatePost))
 	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
 
+	router.HandlerFunc(http.MethodGet, "/ping", ping)
+
 	// Create a middleware chain containing our 'standard' middleware
 	// which will be used for every request our application receives
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
