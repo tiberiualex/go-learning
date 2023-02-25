@@ -2,10 +2,12 @@ package main
 
 import (
 	"html/template"
+	"io/fs"
 	"path/filepath"
 	"time"
 
 	"tiberiualex-golearning-snippetbox/internal/models"
+	"tiberiualex-golearning-snippetbox/ui"
 )
 
 // Define a templateData type to act as a holding structure for
@@ -46,7 +48,13 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	// match the pattern "./ui/html/pages/*.tmpl". This will essentially give
 	// us a slice of all the filepaths for our application 'page' templates
 	// like [ui/html/pages/home.tmpl ui/html/pages/view/tmpl]
-	pages, err := filepath.Glob("./ui/html/pages/*.tmpl")
+	// old code pages, err := filepath.Glob("./ui/html/pages/*.tmpl")
+
+	// Use the fs.Glob() to get a slice of all filepaths in the ui.Files embedded
+	// filesystem which match the pattern 'html/pages/*tmpl'. This essentially
+	// gives us a slice of all the 'page' templates for the application, just
+	// like before
+	pages, err := fs.Glob(ui.Files, "html/pages/*.tmpl")
 	if err != nil {
 		return nil, err
 	}
@@ -57,22 +65,17 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// and assign it to the name variable
 		name := filepath.Base(page)
 
-		// The template.FuncMap must be registered with the template set before you
-		// call the ParseFiles() method. This means we have to use template.New() to
-		// create an empty template set, use the Funcs() method to registed the
-		// template.FuncMap, and then parse the file as normal.
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl")
-		if err != nil {
-			return nil, err
+		// Create a slice containing the filepath patterns for the templates we
+		// want to parse.
+		patterns := []string{
+			"html/base.tmpl",
+			"html/partials/*.tmpl",
+			page,
 		}
 
-		ts, err = ts.ParseGlob("./ui/html/partials/*.tmpl")
-		if err != nil {
-			return nil, err
-		}
-
-		// Parse the files into a template set.
-		ts, err = ts.ParseFiles(page)
+		// Use ParseFS() instead of ParseFiles() to parse the template files
+		// from the ui.files embedded filesystem
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
 		if err != nil {
 			return nil, err
 		}
