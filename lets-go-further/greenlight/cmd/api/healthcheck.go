@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -11,7 +10,20 @@ import (
 // This is the idiomatic way of making dependencies available to handlers as they
 // can simply be fields on the application struct, which the handlers have access to
 func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "status: available")
-	fmt.Fprintf(w, "environment: %s\n", app.config.env)
-	fmt.Fprintf(w, "version: %s\n", version)
+	// Declare an envelope map containing the data for the response. Notice the way
+	// we've constructed this means the environment and version data will now be nested
+	// under a system_info key in the JSON response
+	env := envelope{
+		"status": "available",
+		"system_info": map[string]string{
+			"environment": app.config.env,
+			"version":     version,
+		},
+	}
+
+	err := app.writeJSON(w, http.StatusOK, env, nil)
+	if err != nil {
+		app.logger.Println(err)
+		app.serverErrorResponse(w, r, err)
+	}
 }
