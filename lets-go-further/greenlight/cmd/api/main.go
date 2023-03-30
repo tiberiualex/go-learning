@@ -13,6 +13,7 @@ import (
 	// Import the pq driver so that it can register itself with the database/sql
 	// package. Note that we alias this import to the blank identifier, to stop the Go
 	// compiler complaining that the package isn't being used
+	"github.com.go-learning.greenlight/internal/data"
 	_ "github.com/lib/pq"
 )
 
@@ -41,6 +42,8 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	// Add a models field to hold our new Models struct
+	models data.Models
 }
 
 func main() {
@@ -89,6 +92,9 @@ func main() {
 	app := &application{
 		config: cfg,
 		logger: logger,
+		// Use the data.NewModels() function to initialize a Models struct, passing in the
+		// connection pool as a parameter
+		models: data.NewModels(db),
 	}
 
 	// Declare a HTTP server with some sensible timeout settings, which listens on the
