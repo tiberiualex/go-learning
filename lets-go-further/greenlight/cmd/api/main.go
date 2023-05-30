@@ -4,9 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
-	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -119,30 +116,7 @@ func main() {
 		models: data.NewModels(db),
 	}
 
-	// Declare a HTTP server with some sensible timeout settings, which listens on the
-	// port provided in the config struct and uses the servemux we created above as the
-	// handler.
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      app.routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		// Create a new Go log.Logger instance with the log.New() function, passing in
-		// our custom Logger as the ifrst parameter. The "" and 0 indicate that the
-		// log.Logger instance should not use a prefix or any flags
-		ErrorLog: log.New(logger, "", 0),
-	}
-
-	// Start the HTTP server.
-	// Again, we use the PrintInfo() method to write a "starting server" message at the
-	// INFO level. But this time we pass a map containing additional properties (the
-	// operating environment and server address) as the final parameter.
-	logger.PrintInfo("starting server", map[string]string{
-		"addr": srv.Addr,
-		"env":  cfg.env,
-	})
-	err = srv.ListenAndServe()
+	err = app.serve()
 	logger.PrintFatal(err, nil)
 }
 
