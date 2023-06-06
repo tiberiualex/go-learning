@@ -205,3 +205,23 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 	// Otherwise, return the converted integer value.
 	return i
 }
+
+// The background() helper accepts an arbitrary function as a parameter
+// and will run that function in a separate goroutine. If there's any panic
+// inside the function, recover the panic and print the error
+func (app *application) background(fn func()) {
+	// Launch a background goroutine
+	go func() {
+		// Recover any panic. Recover should always be used inside a deferred function.
+		// When a panic occurs within a function, it triggers the execution of any
+		// deferred functions in that function before propagating the panic to its caller.
+		defer func() {
+			if err := recover(); err != nil {
+				app.logger.PrintError(fmt.Errorf("%s", err), nil)
+			}
+		}()
+
+		// Execute the arbitrary function that we passed as a parameter
+		fn()
+	}()
+}
