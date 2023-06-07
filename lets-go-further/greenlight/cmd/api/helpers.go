@@ -132,7 +132,6 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst int
 		default:
 			return err
 		}
-
 	}
 
 	// Call Decode() again, using a pointer to an empty anonymous struct as the
@@ -210,8 +209,13 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 // and will run that function in a separate goroutine. If there's any panic
 // inside the function, recover the panic and print the error
 func (app *application) background(fn func()) {
+	// Increment the app global WaitGroup counter.
+	app.wg.Add(1)
 	// Launch a background goroutine
 	go func() {
+		// Use defer to decerement the WaitGroup counter before the goroutine returns.
+		defer app.wg.Done()
+
 		// Recover any panic. Recover should always be used inside a deferred function.
 		// When a panic occurs within a function, it triggers the execution of any
 		// deferred functions in that function before propagating the panic to its caller.
