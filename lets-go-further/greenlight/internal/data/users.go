@@ -243,7 +243,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	// Execute the query, scanning tghe return values into a User struct. If no matching
+	// Execute the query, scanning the return values into a User struct. If no matching
 	// record is found we return an ErrRecordNotFound error.
 	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
