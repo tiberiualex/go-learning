@@ -160,6 +160,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		// that we'd normally use
 		if data.ValidateTokenPlaintext(v, token); !v.Valid() {
 			app.invalidAuthenticationTokenResponse(w, r)
+			return
 		}
 
 		// Retrieve the details of the user associated with the authentication token,
@@ -171,14 +172,41 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			switch {
 			case errors.Is(err, data.ErrRecordNotFound):
 				app.invalidAuthenticationTokenResponse(w, r)
+				return
 			default:
 				app.serverErrorResponse(w, r, err)
+				return
 			}
 		}
 
 		// Call the contextSetUser() helper to add the user information to the request
 		// context
 		r = app.contextSetUser(r, user)
+
+		// Call the next handler in the chain
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Use the contextGetUser() helper that we made earlier to retrieve the user
+		// information from the request context
+		user := app.contextGetUser(r)
+
+		// If the user is anonymous, then call the authenticationRequiredResponse() to
+		// inform the client that they should authenticate before trying again
+		if user.IsAnonymous() {
+			app.authenticationRequiredResponse(w, r)
+			return
+		}
+
+		// If the user is not activated, use the inactiveAccountResponse() helpoer to
+		// inform them that they need to activate their account
+		if !user.Activated {
+			app.inactiveAccountResponse(w, r)
+			return
+		}
 
 		// Call the next handler in the chain
 		next.ServeHTTP(w, r)
