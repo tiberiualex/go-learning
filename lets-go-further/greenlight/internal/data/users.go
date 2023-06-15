@@ -21,6 +21,9 @@ type UserModel struct {
 	DB *sql.DB
 }
 
+// Declare a new AnonymousUser variable
+var AnonymousUser = &User{}
+
 // Define a User struct to represent an individual user. Importantly, notice how we are
 // using the json:"-" struct tag to prevent the Password and Version fields appearing in
 // any output when we encode it to JSON. Also notice that the Password field uses the
@@ -56,6 +59,11 @@ func (p *password) Set(plaintextPassword string) error {
 	p.hash = hash
 
 	return nil
+}
+
+// Check if a User instance is the AnonymousUser
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
 }
 
 // The Matches() method checks whether the provided plaintext password matches the
