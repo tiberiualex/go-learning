@@ -8,12 +8,13 @@ import (
 	"sync"
 	"time"
 
-	// Import the pq driver so that it can register itself with the database/sql
-	// package. Note that we alias this import to the blank identifier, to stop the Go
-	// compiler complaining that the package isn't being used
 	"github.com.go-learning.greenlight/internal/data"
 	"github.com.go-learning.greenlight/internal/jsonlog"
 	"github.com.go-learning.greenlight/internal/mailer"
+
+	// Import the pq driver so that it can register itself with the database/sql
+	// package. Note that we alias this import to the blank identifier, to stop the Go
+	// compiler complaining that the package isn't being used
 	_ "github.com/lib/pq"
 )
 
