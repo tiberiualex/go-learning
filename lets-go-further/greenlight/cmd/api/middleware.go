@@ -2,15 +2,18 @@ package main
 
 import (
 	"errors"
+	"expvar"
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com.go-learning.greenlight/internal/data"
 	"github.com.go-learning.greenlight/internal/validator"
+	"github.com/felixge/httpsnoop"
 	"golang.org/x/time/rate"
 )
 
@@ -253,4 +256,89 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 
 	// Wrap this with the requiredActivatedUser() middleware before returning it
 	return app.requireActivatedUser(fn)
+}
+
+func (app *application) enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Add the "Vary: Origin" header
+		w.Header().Add("Vary", "Origin")
+
+		// Get the value of the request's Origin header
+		origin := r.Header.Get("Origin")
+
+		// Only run this if there's an Origin request header present AND at least one
+		// trusted origin is configured
+		if origin != "" && len(app.config.cors.trustedOrigins) != 0 {
+			// Loop through the list of trusted origins, checking to see if the request
+			// origin exactly matches one of them
+			for i := range app.config.cors.trustedOrigins {
+				if origin == app.config.cors.trustedOrigins[i] {
+					// If there is a match, then set a "Access-Control-Allow-Origin"
+					// response header with the request origin as the value
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+
+					// Check if the request has the HTTP method OPTIONS and contains the
+					// "Access-Control-Request-Method" header. If it does, then we treat
+					// it as a preflight request
+					if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+						// Set the necessary preflight response headers, as discussed
+						// previously
+						w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, PUT, PATCH, DELETE")
+						w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+
+						// Write the headers along with a 200 OK status and return from
+						// the middleware with no further action.
+						// Sending 200 instead of 204 as some browser might not support it
+						// and block the subsequent request
+						w.WriteHeader(http.StatusOK)
+						return
+					}
+				}
+			}
+		}
+
+		// Call the next heandler in the chain
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) metrics(next http.Handler) http.Handler {
+	// Initialize the new expvar variables when the middleware chain is first built/registered
+	totalRequestsReceived := expvar.NewInt("total_requests_received")
+	totalResponsesSent := expvar.NewInt("total_responses_sent")
+	totalProcessingTimeMicroseconds := expvar.NewInt("total_processing_time_micros")
+	// Declare a new expvar map to hold the count of responses for each HTTP status
+	// code
+	totalResponsesSentByStatus := expvar.NewMap("total_responses_sent_by_status")
+
+	// The following cxode will be run for every request...
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Record the time that we started to process the request
+		start := time.Now()
+
+		// Use the Add() method to increment the number of requests received by 1.
+		totalRequestsReceived.Add(1)
+
+		// Call the httpsnoop.CaptureMetrics() function, passing in the next handler in
+		// the chain along with the existing http.ResponseWriter and http.Request. This
+		// returns the metrics struct that we saw above
+		metrics := httpsnoop.CaptureMetrics(next, w, r)
+
+		// Call the next handler in the chain
+		next.ServeHTTP(w, r)
+
+		// On the way back up the middleware chain, increment the number of responses
+		// sent by 1
+		totalResponsesSent.Add(1)
+
+		// Calculate the number of microseconds since we began to process the request,
+		// then increment the total processing time by this amount
+		duration := time.Since(start).Microseconds()
+		totalProcessingTimeMicroseconds.Add(duration)
+
+		// Use the Add() method to increment the count for the given status code by 1
+		// Note that the expvar map is string-keyed, so we need to use the strconv.Itoa()
+		// function to convert the status code (which is an integer) to a string
+		totalResponsesSentByStatus.Add(strconv.Itoa(metrics.Code), 1)
+	})
 }
